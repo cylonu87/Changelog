@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<changelog>
+    <release version="1.2.0" versioncode="3" releasedate="2015-03-01" summary="my app summary.">
+        <change type="new">[b]New![/b] Awesome new feature.</change>
+        <change>This was [s]removed[/s].</change>
+        <change type="bug">Bug [u][i]fixed[/i][/u].</change>
+        <change type="improvement">Load faster.</change>
+        <change>Translations added: italian, spanish.</change>
+        <change><![CDATA[This feature is <font color='red'><b>deprecated</b></font>.]]></change>
+    </release>
+
+    <release version="1.1.0" versioncode="1">
+        <change type="bug">Some typos fixed.</change>
+        <change>Compatible with lollipop.</change>
+    </release>
+
+    <release version="1.0.0" versioncode="1" releasedate="January 1st 2014">
+        <change>Initial version</change>
+	</release>
+    
+</changelog>
