@@ -22,7 +22,9 @@ import org.xmlpull.v1.XmlPullParserException;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 public class Changelog {
     private static final String RELEASE_TAG = "release";
@@ -53,8 +55,6 @@ public class Changelog {
     /* Button */
     private String mButtonText = null;
     private DialogInterface.OnClickListener mOnClickListener = null;
-
-
 
     public Changelog(@NonNull Context context, @XmlRes int changelogResourceId) {
         this.mContext = context;
@@ -145,17 +145,44 @@ public class Changelog {
 
                 xmlResourceParser.next();
 
-                String change = xmlResourceParser.getText();
+                /*String change = xmlResourceParser.getText();
                 change = change.replace("[b]", "<b>").replace("[/b]", "</b>").replace("[i]", "<i>").replace("[/i]", "</i>").replace("[u]", "<u>").replace("[/u]", "</u>").replace("[s]", "<s>").replace("[/s]", "</s>");
-                mStyle.renderChange(sb, change, changeType);
+                */
+
+                StringBuilder change = new StringBuilder(xmlResourceParser.getText());
+                List<String> tags = Arrays.asList("[b]", "[/b]", "[i]", "[/i]", "[u]", "[/u]", "[s]", "[/s]", "[/color]");
+                List<String> htmlTags = Arrays.asList("<b>", "</b>", "<i>", "</i>", "<u>", "</u>", "<s>", "</s>", "</font>");
+
+                for(int i = 0, count = tags.size(); i < count; i++) {
+                    String tag = tags.get(i);
+                    String htmlTag = htmlTags.get(i);
+                    int pos = change.indexOf(tag);
+                    while(pos >= 0) {
+                        change.replace(pos, pos + tag.length(), htmlTag);
+                        pos = change.indexOf(tag);
+                    }
+                }
+
+                String colorTag = "[color";
+                int start = change.indexOf(colorTag);
+                while(start >= 0) {
+                    int end = change.indexOf("]", start + 1);
+                    if(end > start) {
+                        change.setCharAt(end, '>');
+                        change.replace(start, start+1, "<font ");
+                    }
+                    start = change.indexOf(colorTag);
+                }
+
+                mStyle.renderChange(sb, change.toString(), changeType);
             }
             eventType = xmlResourceParser.next();
         }
         mStyle.renderEndReleaseChanges(sb);
     }
 
-    public void show() {
-        show(null);
+    public boolean show() {
+        return show(null);
     }
 
     public boolean showWhatsNew() {
@@ -165,8 +192,7 @@ public class Changelog {
 
             if(currentVersion > lastVersion) {
                 PreferenceManager.getDefaultSharedPreferences(mContext).edit().putInt(this.getClass().getName(), currentVersion).commit();
-                show(lastVersion + 1);
-                return true;
+                return show(lastVersion + 1);
             }
 
         } catch(Exception e) {
@@ -176,7 +202,7 @@ public class Changelog {
         return false;
     }
 
-    private void show(Integer minVersion) {
+    private boolean show(Integer minVersion) {
         CharSequence popupTitle;
 
         try {
@@ -192,22 +218,26 @@ public class Changelog {
             WebView webView = new WebView(mContext);
 
             String html = getHtml(minVersion);
-            webView.loadDataWithBaseURL(null, html, "text/html", "utf-8", null);
+            if(html != null && html.length() > 0) {
+                webView.loadDataWithBaseURL(null, html, "text/html", "utf-8", null);
 
-            final AlertDialog.Builder builder = new AlertDialog.Builder(mContext)
-                    .setTitle(popupTitle)
-                    .setView(webView)
-                    .setPositiveButton(android.R.string.ok, null);
+                final AlertDialog.Builder builder = new AlertDialog.Builder(mContext)
+                        .setTitle(popupTitle)
+                        .setView(webView)
+                        .setPositiveButton(android.R.string.ok, null);
 
-            if(mButtonText != null && mOnClickListener != null) {
-                builder.setNeutralButton(mButtonText, mOnClickListener);
+                if (mButtonText != null && mOnClickListener != null) {
+                    builder.setNeutralButton(mButtonText, mOnClickListener);
+                }
+
+                AlertDialog dialog = builder.create();
+                dialog.show();
+                return true;
             }
-
-            AlertDialog dialog = builder.create();
-            dialog.show();
         } catch(Exception e) {
             Log.e(this.getClass().getName(), e.getMessage() + "", e);
         }
+        return false;
     }
 
     public static abstract class Style {
